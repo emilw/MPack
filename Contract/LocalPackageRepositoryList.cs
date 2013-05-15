@@ -29,8 +29,33 @@ namespace Contract
             return getPackages(appName, appVersion, true);
         }
 
+        private string getHighestVersionFromWildcard(string appName, string appVersion)
+        {
+            List<Package> result = null;
+
+            if (string.Equals(appVersion.ToLower(), "latest", StringComparison.InvariantCultureIgnoreCase))
+            {
+                appVersion = ".*";
+            }
+
+            if (appVersion.Contains("*") || appVersion.Contains(".*"))
+            {
+                var filterVersion = appVersion;
+
+                result = Packages.Where(x => string.Equals(x.ApplicationName, appName, StringComparison.InvariantCultureIgnoreCase)
+                                && System.Text.RegularExpressions.Regex.IsMatch(x.ApplicationVersion, filterVersion, System.Text.RegularExpressions.RegexOptions.None)).OrderByDescending(y => y.ApplicationVersion, new VersionComparer()).ToList();
+
+                return result.First().ApplicationVersion;
+            }
+
+            return appVersion;
+        }
+
         private List<Package> getPackages(string appName, string appVersion, bool filterWithAnd)
         {
+
+            appVersion = getHighestVersionFromWildcard(appName, appVersion);
+
             List<Package> package;
             if (filterWithAnd)
                 package = Packages.Where(x => string.Equals(appName, x.ApplicationName, StringComparison.InvariantCultureIgnoreCase)
